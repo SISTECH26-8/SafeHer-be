@@ -134,26 +134,26 @@ Jika output bukan `BUILD OK`, jangan push.
 
 ## Peta Dependensi (Gambaran Besar)
 
-```
+```text
 [main] ← Sudah selesai
        │
-       ├──► [feat/auth-jwt]
-       │          │
-       │          ├──► [feat/emergency-contacts]
-       │          │
-       │          ├──► [feat/ml-risk-engine] (paralel dengan emergency-contacts)
-       │          │          │
-       │          │          └──► [feat/safe-route-recommend]
-       │          │                     │
-       │          │                     ├──► [feat/active-navigation]
-       │          │                     │
-       │          │                     └──► [feat/safe-points] (dapat paralel)
-       │          │
-       │          └──► [feat/anonymous-reporting] (paralel setelah auth)
-       │
-       └──► [feat/sos-emergency] ← dep: auth + emergency-contacts
+       └──► [feat/auth-jwt]
                   │
-                  └──► [feat/logging-monitoring]
+                  ├──► [feat/emergency-contacts]
+                  │          │
+                  │          └──► [feat/sos-emergency]
+                  │
+                  ├──► [feat/ml-risk-engine] (paralel dengan emergency-contacts)
+                  │          │
+                  │          └──► [feat/safe-route-recommend]
+                  │                     │
+                  │                     ├──► [feat/active-navigation]
+                  │                     │
+                  │                     └──► [feat/safe-points] (dapat paralel)
+                  │
+                  └──► [feat/anonymous-reporting] (paralel setelah auth)
+
+[feat/logging-monitoring] ← Dikerjakan paling akhir setelah semua fitur selesai
 ```
 
 ---
