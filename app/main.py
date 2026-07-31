@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.responses import RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.core.lifespan import lifespan
@@ -32,6 +33,11 @@ if settings.CORS_ORIGINS:
     )
 
 app.add_middleware(LoggingMiddleware)
+
+@app.get("/", tags=["System"], include_in_schema=False)
+def root():
+    """Redirect to API documentation."""
+    return RedirectResponse(url="/docs")
 
 @app.get("/health", tags=["System"])
 def health_check():
