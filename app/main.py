@@ -5,6 +5,14 @@ from app.core.lifespan import lifespan
 from app.middlewares.logging_middleware import LoggingMiddleware
 from app.users.router import router as users_router
 
+# Import all models to ensure SQLAlchemy mappers initialize correctly
+import app.users.models
+import app.safe_points.models
+import app.reports.models
+import app.trips.models
+import app.emergency.models
+import app.system.models
+
 app = FastAPI(
     title=settings.PROJECT_NAME,
     version="1.0.0",
