@@ -52,7 +52,7 @@ def login_user(db: Session, data: LoginRequest) -> LoginResponse:
     if not verify_password(data.password, user.password_hash):
         raise exc.auth_invalid_credentials()
         
-    token = create_access_token({"sub": str(user.id)})
+    token = create_access_token(str(user.id))
     
     return LoginResponse(
         token=token,
