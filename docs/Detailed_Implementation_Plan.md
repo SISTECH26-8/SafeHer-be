@@ -16,7 +16,7 @@
 
 ## Global Engineering Standards
 
-Aturan ini berlaku untuk semua Stage. Violation adalah alasan yang sah untuk menolak PR.
+Aturan ini berlaku untuk semua Stage.
 
 ### A. Error Handling
 
