@@ -24,5 +24,11 @@ jobs:
         pip install -r requirements.txt
         
     - name: Build Verification
+      env:
+        SECRET_KEY: "dummy_secret_key_for_ci_build"
+        DATABASE_URL: "postgresql://dummy:dummy@localhost:5432/dummy"
+        DIRECT_URL: "postgresql://dummy:dummy@localhost:5432/dummy"
+        REDIS_URL: "redis://localhost:6379/0"
+        WHATSAPP_API_KEY: "dummy_api_key"
       run: |
         python -c "from app.main import app; print('BUILD OK')"
