@@ -34,10 +34,12 @@ if settings.CORS_ORIGINS:
 
 app.add_middleware(LoggingMiddleware)
 
-@app.get("/", tags=["System"], include_in_schema=False)
+@app.get("/", tags=["System"])
 def root():
-    """Redirect to API documentation."""
-    return RedirectResponse(url="/docs")
+    """Welcome message and documentation link."""
+    return {
+        "message": "Selamat datang di SafeHer API. Silakan kunjungi /docs untuk melihat dokumentasi API."
+    }
 
 @app.get("/health", tags=["System"])
 def health_check():
