@@ -3,6 +3,15 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.core.lifespan import lifespan
 from app.middlewares.logging_middleware import LoggingMiddleware
+from app.users.router import router as users_router
+
+# Import all models to ensure SQLAlchemy mappers initialize correctly
+import app.users.models
+import app.safe_points.models
+import app.reports.models
+import app.trips.models
+import app.emergency.models
+import app.system.models
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -29,6 +38,8 @@ def health_check():
     """Health check endpoint."""
     return {
         "status": "ok",
-        "model_loaded": hasattr(app.state, "model") and app.state.model is not None,
-        "model_version": getattr(app.state, "model_version", "unknown")
+        "model_loaded": app.state.model is not None
     }
+
+# Register Routers
+app.include_router(users_router, prefix=settings.API_V1_PREFIX + "/auth")
