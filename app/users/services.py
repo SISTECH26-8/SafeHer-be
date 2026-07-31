@@ -2,7 +2,7 @@ import re
 from sqlalchemy.orm import Session
 from app.users.models import User
 from app.users.schemas import RegisterRequest, RegisterResponse, LoginRequest, LoginResponse
-from app.core.security import get_password_hash, verify_password, create_access_token
+from app.core.security import hash_password, verify_password, create_access_token
 from app.core import exceptions as exc
 
 def _normalize_phone_number(phone: str) -> str:
@@ -24,7 +24,7 @@ def register_user(db: Session, data: RegisterRequest) -> RegisterResponse:
         raise exc.user_already_exists()
         
     normalized_phone = _normalize_phone_number(data.phone_number)
-    hashed_password = get_password_hash(data.password)
+    hashed_password = hash_password(data.password)
     
     new_user = User(
         full_name=data.full_name,
