@@ -13,8 +13,8 @@ class RegisterRequest(BaseModel):
     def validate_password(cls, v: str) -> str:
         if len(v) < 8:
             raise ValueError("Password minimal 8 karakter")
-        if len(v.encode('utf-8')) > 72:
-            raise ValueError("Password terlalu panjang (maksimal 72 bytes)")
+        if len(v) > 72:
+            raise ValueError("Password maksimal 72 karakter")
         return v
 
 class RegisterResponse(BaseModel):
