@@ -4,6 +4,29 @@
 
 ---
 
+## 🔀 Git Workflow & Branching Strategy
+
+Untuk mencegah *merge conflict* dan menjaga branch *main* tetap stabil, wajib gunakan alur kerja berikut:
+
+1. **Branch Utama:**
+   - `main`: Branch produksi yang stabil. **DILARANG KERAS** melakukan `push` langsung ke branch ini.
+   - `develop`: Branch integrasi utama tempat semua fitur baru dikumpulkan dan dites.
+2. **Mulai Mengerjakan Fitur:**
+   - Pastikan Anda berada di branch `develop` terbaru sebelum membuat branch fitur:
+     ```bash
+     git checkout develop
+     git pull origin develop
+     git checkout -b feat/nama-fitur
+     ```
+3. **Menyelesaikan Fitur:**
+   - Lakukan commit dan push ke branch fitur Anda (`git push origin feat/nama-fitur`).
+   - Buka GitHub dan buat **Pull Request (PR)** dari branch fitur Anda menuju branch **`develop`**.
+   - Tunggu *CodeRabbit* melakukan *review* otomatis. Jika bersih, fitur bisa di-merge ke `develop`.
+4. **Deploy ke Production (`main`):**
+   - Penggabungan ke `main` HANYA dilakukan jika seluruh fitur MVP sudah selesai, di-test, dan siap dirilis. Alurnya menggunakan PR dari `develop` menuju `main`.
+
+---
+
 ## Global Engineering Standards
 
 Aturan ini berlaku untuk semua Stage. Violation adalah alasan yang sah untuk menolak PR.
