@@ -1,4 +1,5 @@
-from fastapi import Depends, Header
+from fastapi import Depends
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 from jose import JWTError, ExpiredSignatureError
 from app.db.session import SessionLocal
@@ -15,15 +16,17 @@ def get_db():
         db.close()
 
 
-def get_current_user_id(authorization: str = Header(default=None)) -> str:
+security = HTTPBearer(auto_error=False)
+
+def get_current_user_id(credentials: HTTPAuthorizationCredentials = Depends(security)) -> str:
     """
     Extracts and validates the JWT from the Authorization header.
     Returns the user_id (UUID string) from the token subject.
     """
-    if not authorization or not authorization.startswith("Bearer "):
+    if not credentials:
         exc.auth_missing_token()
 
-    token = authorization.split(" ", 1)[1]
+    token = credentials.credentials
     try:
         user_id = decode_access_token(token)
         return user_id
