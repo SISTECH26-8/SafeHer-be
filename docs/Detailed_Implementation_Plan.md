@@ -18,7 +18,11 @@
 
 Aturan ini berlaku untuk semua Stage.
 
-### A. Error Handling
+### A. Format Pesan (Bahasa Indonesia)
+
+**WAJIB:** Semua pesan teks (`message`) yang dikembalikan ke Frontend dalam response body (baik *success* maupun *error*) **harus menggunakan Bahasa Indonesia yang baku dan sopan**. Contoh: `"Registrasi berhasil"`, `"Password minimal 8 karakter"`.
+
+### B. Error Handling
 
 Gunakan fungsi dari `app/core/exceptions.py`. Jangan gunakan `raise HTTPException(...)` langsung di router atau service.
 
