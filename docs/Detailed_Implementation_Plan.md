@@ -39,7 +39,7 @@ Semua error harus 1:1 sesuai `API_Contract.md`. Fungsi di `exceptions.py` sudah 
 
 ---
 
-### B. Autentikasi
+### C. Autentikasi
 
 Gunakan `Depends(get_current_user_id)` dari `app/api/dependencies.py`. Jangan parse JWT secara manual di router.
 
@@ -51,7 +51,7 @@ def my_handler(user_id: str = Depends(get_current_user_id)):
 
 ---
 
-### C. Database Session
+### D. Database Session
 
 Gunakan `Depends(get_db)` dari `app/api/dependencies.py`. Jangan buat `SessionLocal()` manual di router — session tidak akan tertutup jika ada exception.
 
@@ -63,7 +63,7 @@ def my_handler(db: Session = Depends(get_db), user_id: str = Depends(get_current
 
 ---
 
-### D. Separation of Concerns
+### E. Separation of Concerns
 
 Router hanya memanggil service. Tidak boleh ada query DB, logika bisnis, atau kondisional di dalam fungsi router.
 
@@ -78,7 +78,7 @@ Semua logika (query, validasi bisnis, error handling) ada di `services.py`.
 
 ---
 
-### E. Validasi Koordinat
+### F. Validasi Koordinat
 
 Setiap schema yang menerima `lat`/`lon` wajib menggunakan Pydantic validator. Jika validasi gagal, tangkap dan re-raise sebagai `exc.invalid_coordinates()`.
 
@@ -92,7 +92,7 @@ def validate_lat(cls, v):
 
 ---
 
-### F. Alembic — Migrasi Database
+### G. Alembic — Migrasi Database
 
 Setiap perubahan pada `models.py` (tambah kolom, tabel baru) harus diikuti dengan:
 ```bash

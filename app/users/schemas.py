@@ -8,6 +8,15 @@ class RegisterRequest(BaseModel):
     password: str
     phone_number: str
 
+    @field_validator('phone_number')
+    @classmethod
+    def validate_phone(cls, v: str) -> str:
+        import re
+        cleaned = re.sub(r'[^\d+]', '', v)
+        if not cleaned or (cleaned == '+'):
+            raise ValueError("Nomor telepon tidak valid")
+        return v
+
     @field_validator('password')
     @classmethod
     def validate_password(cls, v: str) -> str:

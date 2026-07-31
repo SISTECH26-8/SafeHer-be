@@ -1,5 +1,6 @@
 import re
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 from app.users.models import User
 from app.users.schemas import RegisterRequest, RegisterResponse, LoginRequest, LoginResponse
 from app.core.security import hash_password, verify_password, create_access_token
@@ -33,9 +34,13 @@ def register_user(db: Session, data: RegisterRequest) -> RegisterResponse:
         phone_number=normalized_phone
     )
     
-    db.add(new_user)
-    db.commit()
-    db.refresh(new_user)
+    try:
+        db.add(new_user)
+        db.commit()
+        db.refresh(new_user)
+    except IntegrityError:
+        db.rollback()
+        raise exc.user_already_exists()
     
     return RegisterResponse(
         user_id=new_user.id,
