@@ -135,7 +135,7 @@ Jika output bukan `BUILD OK`, jangan push.
 ## Peta Dependensi (Gambaran Besar)
 
 ```
-[chore/phase2-foundation] ← Sudah selesai
+[main] ← Sudah selesai
        │
        ├──► [feat/auth-jwt]
        │          │
@@ -159,7 +159,7 @@ Jika output bukan `BUILD OK`, jangan push.
 ---
 
 ## Stage 0 — Foundation (Sudah Selesai ✅)
-`branch: chore/phase2-foundation` *(sudah di-merge)*
+`branch: main`
 
 File yang sudah ada dan **jangan diubah** oleh branch lain tanpa koordinasi:
 - `app/core/config.py`, `app/core/security.py`, `app/core/exceptions.py`, `app/core/lifespan.py`
@@ -176,7 +176,7 @@ File yang sudah ada dan **jangan diubah** oleh branch lain tanpa koordinasi:
 `branch: feat/auth-jwt`
 
 ### Dependensi
-- `chore/phase2-foundation` harus ter-merge ✅
+- -
 
 ### Code Focus
 
