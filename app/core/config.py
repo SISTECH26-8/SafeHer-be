@@ -1,5 +1,5 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from pydantic import AnyHttpUrl, computed_field
+from pydantic import AnyHttpUrl, computed_field, field_validator
 from typing import List, Optional
 
 class Settings(BaseSettings):
@@ -13,6 +13,16 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 1440
     
     DATABASE_URL: str
+    
+    @field_validator("DATABASE_URL")
+    @classmethod
+    def strip_pgbouncer(cls, v: str) -> str:
+        from urllib.parse import urlparse, urlencode, parse_qsl, urlunparse
+        parsed = urlparse(v)
+        query_params = parse_qsl(parsed.query, keep_blank_values=True)
+        filtered_query = [(k, val) for k, val in query_params if k != 'pgbouncer']
+        parsed = parsed._replace(query=urlencode(filtered_query))
+        return urlunparse(parsed)
     
     REDIS_URL: str
     REDIS_SOS_TTL_SECONDS: int = 3600
