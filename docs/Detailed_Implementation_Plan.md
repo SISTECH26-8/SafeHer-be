@@ -6,14 +6,11 @@
 
 ## 🔀 Git Workflow (Wajib)
 
-**ATURAN MUTLAK:** DILARANG push langsung ke `main` atau `develop`.
-
 1. **Mulai Fitur:** Selalu mulai dari `develop` terbaru.
    ```bash
    git checkout develop && git pull && git checkout -b feat/nama-fitur
    ```
 2. **Review & Merge:** Buat Pull Request (PR) dari branch fitur ke **`develop`**. Tunggu review CodeRabbit sebelum merge.
-3. **Rilis:** PR dari `develop` ke `main` HANYA dibuat ketika seluruh MVP selesai dan siap deploy.
 
 ---
 
