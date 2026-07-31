@@ -374,8 +374,8 @@ def score_to_level(score: float) -> tuple[str, str]:
 - `app/safe_points/router.py`
 
 **Endpoints:**
-- `GET /api/v1/ml/destination-risk` 🔒
-- `POST /api/v1/ml/routes/recommend` 🔒
+- `GET /api/v1/trips/destination-risk` 🔒
+- `POST /api/v1/trips/routes/recommend` 🔒
 - `GET /api/v1/safe-points` 🔒
 
 **Schema response `routes/recommend`:**
@@ -405,8 +405,8 @@ class RecommendResponse(BaseModel):
 | Log ML | Insert ke `ml_prediction_logs` secara async |
 
 ### Checklist Kesiapan PR
-- [ ] `GET /ml/destination-risk` → `{risk_score, level, color_indicator}` konsisten
-- [ ] `POST /ml/routes/recommend`: `recommended_route_id` selalu rute dengan skor terendah
+- [ ] `GET /trips/destination-risk` → `{risk_score, level, color_indicator}` konsisten
+- [ ] `POST /trips/routes/recommend`: `recommended_route_id` selalu rute dengan skor terendah
 - [ ] Waypoints di response adalah koordinat asli (verifikasi manual)
 - [ ] `ml_prediction_logs` terisi dengan kedua koordinat (asli + mock) di kolom `inputs`
 - [ ] OSRM 1 rute → tetap jalan
