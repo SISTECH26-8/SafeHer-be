@@ -1,0 +1,11 @@
+{
+  "crime_count": 5.9182254889815695,
+  "mean_severity": 46.77605396316298,
+  "arrest_rate": 0.13447280183462937,
+  "domestic_ratio": 0.19670873323462457,
+  "mean_crowd_level": 42.88963289550681,
+  "mean_lighting_level": 62.43692025717971,
+  "dominant_location_category": "RESIDENTIAL",
+  "cell_target_enc": 49.965870256912496,
+  "cell_freq_enc": 0.0
+}
