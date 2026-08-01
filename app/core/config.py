@@ -27,11 +27,12 @@ class Settings(BaseSettings):
     REDIS_URL: str
     REDIS_SOS_TTL_SECONDS: int = 3600
     
-    MODEL_VERSION: str = "v1.0"
-    MODEL_PATH: str = "app/ml/model_v1.joblib"
+    MODEL_VERSION: str = "v4.0"
+    MODEL_PATH: str = "app/ml/models/model_v4.joblib"
     
-    OSRM_BASE_URL: str = "http://router.project-osrm.org"
-    OSRM_TIMEOUT_SECONDS: int = 5
+    MAPBOX_BASE_URL: str = "https://api.mapbox.com/directions/v5/mapbox"
+    MAPBOX_TIMEOUT_SECONDS: int = 10
+    MAPBOX_API_KEY: str
     WHATSAPP_API_KEY: str = "your-wa-api-key"
     WHATSAPP_API_BASE_URL: str = "https://graph.facebook.com/v19.0"
     
