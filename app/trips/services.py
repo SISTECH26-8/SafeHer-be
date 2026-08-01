@@ -53,26 +53,27 @@ def get_destination_risk(db: Session, background_tasks: BackgroundTasks, model: 
     )
 
 @retry(stop=stop_after_attempt(2), wait=wait_exponential(multiplier=1, min=2, max=4))
-async def _fetch_osrm_routes(origin_lat: float, origin_lon: float, dest_lat: float, dest_lon: float) -> dict:
-    url = f"{settings.OSRM_BASE_URL}/route/v1/driving/{origin_lon},{origin_lat};{dest_lon},{dest_lat}"
+async def _fetch_mapbox_routes(origin_lat: float, origin_lon: float, dest_lat: float, dest_lon: float) -> dict:
+    url = f"{settings.MAPBOX_BASE_URL}/driving/{origin_lon},{origin_lat};{dest_lon},{dest_lat}"
     params = {
         "overview": "full",
         "geometries": "geojson",
-        "alternatives": "true"
+        "alternatives": "true",
+        "access_token": settings.MAPBOX_API_KEY
     }
     
     async with httpx.AsyncClient() as client:
         try:
-            resp = await client.get(url, params=params, timeout=settings.OSRM_TIMEOUT_SECONDS)
+            resp = await client.get(url, params=params, timeout=settings.MAPBOX_TIMEOUT_SECONDS)
             resp.raise_for_status()
             return resp.json()
         except httpx.RequestError as e:
-            raise exc.external_api_error(f"Gagal menghubungi OSRM: {str(e)}")
+            raise exc.external_api_error(f"Gagal menghubungi Mapbox: {str(e)}")
         except httpx.HTTPStatusError as e:
-            raise exc.external_api_error(f"OSRM error status {e.response.status_code}")
+            raise exc.external_api_error(f"Mapbox error status {e.response.status_code}")
 
 def _sample_waypoints(coordinates: List[List[float]], step: int = 5) -> List[Dict[str, float]]:
-    # OSRM returns coordinates as [lon, lat]
+    # Mapbox returns coordinates as [lon, lat] (GeoJSON format)
     # We sample every 'step' points to reduce prediction overhead, but keep the first and last
     if not coordinates:
         return []
@@ -93,11 +94,11 @@ async def recommend_safe_routes(db: Session, background_tasks: BackgroundTasks, 
     if req.origin_lat == req.destination_lat and req.origin_lon == req.destination_lon:
         raise exc.validation_error("Origin dan destination tidak boleh sama")
         
-    osrm_data = await _fetch_osrm_routes(req.origin_lat, req.origin_lon, req.destination_lat, req.destination_lon)
+    mapbox_data = await _fetch_mapbox_routes(req.origin_lat, req.origin_lon, req.destination_lat, req.destination_lon)
     
-    routes = osrm_data.get("routes", [])
+    routes = mapbox_data.get("routes", [])
     if not routes:
-        raise exc.external_api_error("OSRM tidak mengembalikan rute yang valid")
+        raise exc.external_api_error("Mapbox tidak mengembalikan rute yang valid")
         
     evaluations = []
     
@@ -137,7 +138,7 @@ async def recommend_safe_routes(db: Session, background_tasks: BackgroundTasks, 
         )
         
         # We must return FULL waypoints to frontend (not sampled), as per API contract?
-        # The contract says: "waypoints: [{lat, lon}] - koordinat ASLI dari OSRM"
+        # The contract says: "waypoints: [{lat, lon}] - koordinat ASLI dari Mapbox"
         # It's better to return the full geometry or sampled? 
         # Usually frontend needs full coordinates to draw the polyline.
         full_waypoints = [{"lat": lat, "lon": lon} for lon, lat in coords]
@@ -152,7 +153,7 @@ async def recommend_safe_routes(db: Session, background_tasks: BackgroundTasks, 
         })
         
     if not evaluations:
-        raise exc.external_api_error("Gagal mengevaluasi rute dari OSRM")
+        raise exc.external_api_error("Gagal mengevaluasi rute dari Mapbox")
         
     # Tie-breaker logic: sort by (average_risk_score ASC, _duration ASC)
     evaluations.sort(key=lambda x: (x["average_risk_score"], x["_duration"]))

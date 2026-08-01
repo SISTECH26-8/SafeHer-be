@@ -180,3 +180,32 @@ To prevent routes with unknown historical data from being prematurely flagged as
 - **`HIGH (Red)`**: **`> 82`** (Model explicitly detects highly dangerous historical cell data, reaching up to the maximum score of ~89).
 
 This ensures a balanced, proportional risk classification where only explicitly dangerous paths are penalized, maximizing the UX of the route recommendation engine.
+
+### Mapbox Integration & Live Testing
+The routing engine utilizes the **Mapbox Directions API** (which natively supports multiple route alternatives via the `alternatives=true` parameter). This ensures we can provide up to 3 distinct routes for any given trip, which are then individually evaluated by our ML model.
+
+You can test the system's dynamic risk evaluation using the following JSON payloads against the `POST /api/v1/trips/routes/recommend` endpoint:
+
+**1. Medium Risk Route (Yellow)**  
+*(UI to Cibinong - Leaves the Anchor point, resulting in moderate safety)*
+```json
+{
+  "origin_lat": -6.3606,
+  "origin_lon": 106.8285,
+  "destination_lat": -6.4715,
+  "destination_lon": 106.8488,
+  "datetime": "2026-08-02T08:00:00Z"
+}
+```
+
+**2. High Risk Route (Red)**  
+*(UI to Margonda Area - Short trip that stays entirely within the high-risk Anchor bounding box)*
+```json
+{
+  "origin_lat": -6.3606,
+  "origin_lon": 106.8285,
+  "destination_lat": -6.3650,
+  "destination_lon": 106.8300,
+  "datetime": "2026-08-02T08:00:00Z"
+}
+```
