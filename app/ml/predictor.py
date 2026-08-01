@@ -40,7 +40,7 @@ def load_ml_resources():
     if os.path.exists(f_stats):
         _cell_stats = pd.read_parquet(f_stats)
         if 'lat_r' in _cell_stats.columns:
-            _cell_stats.set_index(['lat_r', 'lon_r', 'hour_cat', 'dow'], inplace=True)
+            _cell_stats.set_index(['lat_r', 'lon_r', 'period', 'dow'], inplace=True)
     
     if os.path.exists(f_cell_fb):
         _cell_fallback = pd.read_parquet(f_cell_fb)
@@ -92,7 +92,6 @@ def _build_features(lat: float, lon: float, dt: datetime) -> Tuple[pd.DataFrame,
     }
     
     # Fitur Kelompok B (Lookup Berjenjang)
-    confidence = "Low"
     stats = None
     
     # 1. Primary Exact Match
@@ -101,7 +100,6 @@ def _build_features(lat: float, lon: float, dt: datetime) -> Tuple[pd.DataFrame,
             stats = _cell_stats.loc[(lat_r, lon_r, hour_cat, dow)]
             if isinstance(stats, pd.DataFrame):
                 stats = stats.iloc[0]
-            confidence = "High"
         except KeyError:
             pass
             
@@ -111,14 +109,12 @@ def _build_features(lat: float, lon: float, dt: datetime) -> Tuple[pd.DataFrame,
             stats = _cell_fallback.loc[(lat_r, lon_r)]
             if isinstance(stats, pd.DataFrame):
                 stats = stats.iloc[0]
-            confidence = "Medium"
         except KeyError:
             pass
             
     # 3. Global Fallback
     if stats is None:
         stats = _global_fallback
-        confidence = "Low"
         
     hist_cols = [
         "crime_count", "mean_severity", "arrest_rate", "domestic_ratio",
@@ -138,7 +134,7 @@ def _build_features(lat: float, lon: float, dt: datetime) -> Tuple[pd.DataFrame,
         
     # Pastikan urutan array 23 fitur sesuai FEATURE_COLS
     df = pd.DataFrame([features], columns=FEATURE_COLS)
-    return df, confidence
+    return df
 
 def score_to_level(score: float) -> Tuple[str, str]:
     if score <= geo_config.RISK_THRESHOLD_LOW_MAX:
@@ -149,7 +145,7 @@ def score_to_level(score: float) -> Tuple[str, str]:
         return "HIGH", "RED"
 
 def predict_risk_score(model: Any, lat: float, lon: float, dt: datetime) -> Tuple[float, str]:
-    """Mengembalikan (score, confidence) untuk satu titik."""
+    """Mengembalikan score untuk satu titik."""
     if model is None:
         raise exc.ml_prediction_failed("Model ML tidak tersedia untuk inferensi.")
         
@@ -159,37 +155,35 @@ def predict_risk_score(model: Any, lat: float, lon: float, dt: datetime) -> Tupl
         
     mock_lat, mock_lon = mocked_coords[0]
     
-    df, confidence = _build_features(mock_lat, mock_lon, dt)
+    df = _build_features(mock_lat, mock_lon, dt)
     
     try:
         prediction = model.predict(df)[0]
-        return float(prediction), confidence
+        return float(prediction)
     except Exception as e:
         raise exc.ml_prediction_failed(f"Kesalahan saat inferensi model: {str(e)}")
 
-def predict_batch(model: Any, waypoints: List[Tuple[float, float]], dt: datetime) -> Tuple[List[float], List[str]]:
-    """Mengembalikan ([scores], [confidences]) untuk batch titik."""
+def predict_batch(model: Any, waypoints: List[Tuple[float, float]], dt: datetime) -> List[float]:
+    """Mengembalikan [scores] untuk batch titik."""
     if model is None:
         raise exc.ml_prediction_failed("Model ML tidak tersedia untuk inferensi batch.")
         
     if not waypoints:
-        return [], []
+        return []
         
     mocked_coords = mock_route_to_chicago(waypoints)
     
     dfs = []
-    confidences = []
     
     for mock_lat, mock_lon in mocked_coords:
-        df_single, conf = _build_features(mock_lat, mock_lon, dt)
+        df_single = _build_features(mock_lat, mock_lon, dt)
         dfs.append(df_single)
-        confidences.append(conf)
         
     df_batch = pd.concat(dfs, ignore_index=True)
     
     try:
         predictions = model.predict(df_batch)
-        return [float(p) for p in predictions], confidences
+        return [float(p) for p in predictions]
     except Exception as e:
         raise exc.ml_prediction_failed(f"Kesalahan saat inferensi batch: {str(e)}")
 

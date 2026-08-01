@@ -12,6 +12,6 @@ BBOX_MIN_LON = -87.9401
 BBOX_MAX_LON = -87.5240
 
 # Risk thresholds mapping (0-100 scale)
-RISK_THRESHOLD_LOW_MAX = 33
-RISK_THRESHOLD_MEDIUM_MAX = 66      # >66 = HIGH
-REROUTE_TRIGGER_THRESHOLD = 67      # Threshold that triggers a reroute alert for active trips
+RISK_THRESHOLD_LOW_MAX = 70
+RISK_THRESHOLD_MEDIUM_MAX = 82      # >82 = HIGH
+REROUTE_TRIGGER_THRESHOLD = 83      # Threshold that triggers a reroute alert for active trips
