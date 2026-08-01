@@ -26,7 +26,7 @@ def _create_ml_log(db: Session, source: str, inputs: dict, predicted_score: floa
     db.commit()
 
 def get_destination_risk(db: Session, background_tasks: BackgroundTasks, model: Any, req: schemas.DestinationRiskRequest) -> schemas.DestinationRiskResponse:
-    score = predict_risk_score(model, req.lat, req.lon, req.datetime)
+    score, confidence = predict_risk_score(model, req.lat, req.lon, req.datetime)
     level, color = score_to_level(score)
     
     mocked = mock_route_to_chicago([(req.lat, req.lon)])
@@ -49,7 +49,8 @@ def get_destination_risk(db: Session, background_tasks: BackgroundTasks, model: 
     return schemas.DestinationRiskResponse(
         risk_score=score,
         level=level,
-        color_indicator=color
+        color_indicator=color,
+        confidence=confidence
     )
 
 @retry(stop=stop_after_attempt(2), wait=wait_exponential(multiplier=1, min=2, max=4))
@@ -113,10 +114,16 @@ async def recommend_safe_routes(db: Session, background_tasks: BackgroundTasks, 
         waypoints_tuples = [(pt["lat"], pt["lon"]) for pt in sampled]
         
         # Batch Predict
-        scores = predict_batch(model, waypoints_tuples, req.datetime)
+        scores, confidences = predict_batch(model, waypoints_tuples, req.datetime)
         
         avg_score = sum(scores) / len(scores) if scores else 0
         level, color = score_to_level(avg_score)
+        
+        route_confidence = "High"
+        if "Low" in confidences:
+            route_confidence = "Low"
+        elif "Medium" in confidences:
+            route_confidence = "Medium"
         
         status = "Aman dilalui" if color == "GREEN" else "Berhati-hati" if color == "YELLOW" else "Berisiko Tinggi"
         route_id = f"route_{idx+1}"
@@ -147,6 +154,7 @@ async def recommend_safe_routes(db: Session, background_tasks: BackgroundTasks, 
             "average_risk_score": avg_score,
             "color_indicator": color,
             "status": status,
+            "confidence": route_confidence,
             "waypoints": full_waypoints,
             "_duration": duration # hidden tie-breaker
         })
