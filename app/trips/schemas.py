@@ -11,7 +11,6 @@ class DestinationRiskResponse(BaseModel):
     risk_score: float
     level: str
     color_indicator: str
-    confidence: str
 
 class RouteRecommendRequest(BaseModel):
     origin_lat: float = Field(..., ge=-90, le=90)
@@ -25,7 +24,6 @@ class RouteEvaluation(BaseModel):
     average_risk_score: float
     color_indicator: str
     status: str
-    confidence: str
     waypoints: List[Dict[str, float]]
 
 class RecommendResponse(BaseModel):
