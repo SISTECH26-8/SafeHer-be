@@ -1,10 +1,12 @@
 import re
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
-from app.users.models import User
-from app.users.schemas import RegisterRequest, RegisterResponse, LoginRequest, LoginResponse
+from app.users.models import User, EmergencyContact
+from app.users.schemas import RegisterRequest, RegisterResponse, LoginRequest, LoginResponse, EmergencyContactCreate, EmergencyContactResponse, EmergencyContactListResponse
 from app.core.security import hash_password, verify_password, create_access_token
 from app.core import exceptions as exc
+
+SOS_TRUSTED_CONTACT_LIMIT = 3
 
 def _normalize_phone_number(phone: str) -> str:
     # Remove spaces and non-digit characters except +
@@ -68,3 +70,29 @@ def login_user(db: Session, data: LoginRequest) -> LoginResponse:
             "phone_number": user.phone_number
         }
     )
+    
+def add_emergency_contact(db: Session, user_id: str, data: EmergencyContactCreate) -> dict:
+    current_count = db.query(EmergencyContact).filter(
+        EmergencyContact.user_id == user_id
+    ).count()
+
+    if current_count >= SOS_TRUSTED_CONTACT_LIMIT:
+        raise exc.validation_error(f"Maksimal {SOS_TRUSTED_CONTACT_LIMIT} kontak darurat")
+
+    normalized_phone = _normalize_phone_number(data.phone_number)
+
+    new_contact = EmergencyContact(
+        user_id=user_id,
+        contact_name=data.contact_name,
+        phone_number=normalized_phone,
+        relation=data.relation
+    )
+    
+    db.add(new_contact)
+    db.commit()
+    db.refresh(new_contact)
+
+    return {
+        "contact_id": str(new_contact.id),
+        "message": "Kontak darurat berhasil ditambahkan." 
+    }
