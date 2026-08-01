@@ -206,6 +206,10 @@ You can test the system's dynamic risk evaluation using the following JSON paylo
   "origin_lon": 106.8285,
   "destination_lat": -6.3650,
   "destination_lon": 106.8300,
-  "datetime": "2026-08-02T08:00:00Z"
 }
 ```
+
+**Note on Alternative Route Risk Variations:**
+When requesting multiple routes from Mapbox, you will frequently observe that the alternative routes (`route_1`, `route_2`, etc.) share the same color indicator (e.g., both YELLOW). This is an expected geographic behavior:
+- **Parallel Optimization:** Mapbox optimizes routes for time efficiency. Alternative routes are usually parallel streets running closely to each other, rarely making massive cross-city detours.
+- **Grid Proximity:** Because the alternatives are geographically adjacent, they intersect the same underlying spatial grids (and distance deltas) when translated to the Chicago crime map by the ML predictor. This results in very similar average risk scores for both routes. Mixed-color routes (e.g., Route 1 Green, Route 2 Yellow) do occur naturally, but typically only when a route's baseline score straddles exactly on the `70` or `82` boundary thresholds.
