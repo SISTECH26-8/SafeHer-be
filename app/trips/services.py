@@ -10,6 +10,7 @@ from app.core import exceptions as exc
 from app.trips import schemas
 from app.ml.predictor import predict_risk_score, predict_batch, score_to_level
 from app.ml.geo_mock import mock_route_to_chicago
+from geoalchemy2 import Geography
 from app.system.models import MLPredictionLog
 from app.trips.models import Trip
 from app.reports.models import Report
@@ -233,10 +234,14 @@ async def track_trip(db: Session, user_id: str, trip_id: str, req: schemas.TripT
         "ts": now_ts
     }))
     
-    # 300 meters is roughly 0.0027 degrees
+    # Convert to geography to use exact meters for distance (300 meters)
     reports_count = db.query(Report).filter(
         Report.created_at > trip.created_at,
-        func.ST_DWithin(Report.geom, func.ST_SetSRID(func.ST_MakePoint(req.current_lon, req.current_lat), 4326), 0.0027)
+        func.ST_DWithin(
+            func.cast(Report.geom, type_=Geography),
+            func.cast(func.ST_SetSRID(func.ST_MakePoint(req.current_lon, req.current_lat), 4326), type_=Geography),
+            300
+        )
     ).count()
     
     # Reroute hanya di-trigger jika ada anonymous reporting (user report)
