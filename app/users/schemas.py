@@ -37,3 +37,4 @@ class LoginRequest(BaseModel):
 class LoginResponse(BaseModel):
     token: str
     user: Dict[str, Any]
+
