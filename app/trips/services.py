@@ -239,9 +239,8 @@ async def track_trip(db: Session, user_id: str, trip_id: str, req: schemas.TripT
         func.ST_DWithin(Report.geom, func.ST_SetSRID(func.ST_MakePoint(req.current_lon, req.current_lat), 4326), 0.0027)
     ).count()
     
-    score = predict_risk_score(model, req.current_lat, req.current_lon, datetime.utcnow())
-    
-    if score >= 82 or reports_count > 0:
+    # Reroute hanya di-trigger jika ada anonymous reporting (user report)
+    if reports_count > 0:
         alert_key = f"last_alert_at:{trip_id}"
         if not redis.get(alert_key):
             redis.setex(alert_key, 60, "1")
