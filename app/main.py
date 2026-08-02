@@ -48,4 +48,4 @@ def health_check():
     }
 
 # Register Routers
-app.include_router(users_router, prefix=settings.API_V1_PREFIX + "/auth")
+app.include_router(users_router, prefix=settings.API_V1_PREFIX)
