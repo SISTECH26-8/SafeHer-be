@@ -11,7 +11,12 @@ from app.trips import schemas
 from app.ml.predictor import predict_risk_score, predict_batch, score_to_level
 from app.ml.geo_mock import mock_route_to_chicago
 from app.system.models import MLPredictionLog
-
+from app.trips.models import Trip
+from app.reports.models import Report
+from app.db.redis_client import get_redis_client
+from sqlalchemy import func
+from datetime import datetime
+import math
 from fastapi import BackgroundTasks
 
 def _create_ml_log(db: Session, source: str, inputs: dict, predicted_score: float):
@@ -171,3 +176,129 @@ async def recommend_safe_routes(db: Session, background_tasks: BackgroundTasks, 
         recommended_route_id=recommended_route_id,
         evaluations=final_evals
     )
+
+def _haversine(lat1, lon1, lat2, lon2):
+    R = 6371000 # Radius of earth in meters
+    phi1 = math.radians(lat1)
+    phi2 = math.radians(lat2)
+    delta_phi = math.radians(lat2 - lat1)
+    delta_lambda = math.radians(lon2 - lon1)
+    a = math.sin(delta_phi/2.0)**2 + math.cos(phi1) * math.cos(phi2) * math.sin(delta_lambda/2.0)**2
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
+    return R * c
+
+def start_trip(db: Session, user_id: str, req: schemas.TripStartRequest) -> schemas.TripStartResponse:
+    trip = Trip(
+        user_id=user_id,
+        route_id=req.route_id,
+        start_geom=f"SRID=4326;POINT({req.start_lon} {req.start_lat})",
+        destination_geom=f"SRID=4326;POINT({req.destination_lon} {req.destination_lat})",
+        status="ACTIVE"
+    )
+    db.add(trip)
+    db.commit()
+    db.refresh(trip)
+    return schemas.TripStartResponse(trip_id=str(trip.id), status=trip.status)
+
+async def track_trip(db: Session, user_id: str, trip_id: str, req: schemas.TripTrackRequest, model: Any) -> schemas.TripTrackResponse:
+    trip = db.query(Trip).filter(Trip.id == trip_id).first()
+    if not trip:
+        raise exc.trip_not_found()
+    if trip.status == "COMPLETED":
+        raise exc.trip_not_found()
+    if str(trip.user_id) != user_id:
+        raise exc.access_denied()
+        
+    redis = get_redis_client()
+    pos_key = f"trip:{trip_id}:last_position"
+    now_ts = datetime.utcnow().timestamp()
+    
+    last_pos_str = redis.get(pos_key)
+    if last_pos_str:
+        last_pos = json.loads(last_pos_str)
+        dist = _haversine(last_pos["lat"], last_pos["lon"], req.current_lat, req.current_lon)
+        time_diff = now_ts - last_pos["ts"]
+        
+        # GPS Jump anomaly check (>2km in <10s)
+        if dist > 2000 and time_diff < 10:
+            return schemas.TripTrackResponse(
+                is_safe=True, 
+                show_popup_alert=False, 
+                alert_message="Abaikan: Anomali GPS (Lonjakan terdeteksi)"
+            )
+            
+    redis.setex(pos_key, settings.REDIS_SOS_TTL_SECONDS, json.dumps({
+        "lat": req.current_lat, 
+        "lon": req.current_lon, 
+        "ts": now_ts
+    }))
+    
+    # 300 meters is roughly 0.0027 degrees
+    reports_count = db.query(Report).filter(
+        Report.created_at > trip.created_at,
+        func.ST_DWithin(Report.geom, func.ST_SetSRID(func.ST_MakePoint(req.current_lon, req.current_lat), 4326), 0.0027)
+    ).count()
+    
+    # Reroute hanya di-trigger jika ada anonymous reporting (user report)
+    if reports_count > 0:
+        alert_key = f"last_alert_at:{trip_id}"
+        if not redis.get(alert_key):
+            redis.setex(alert_key, 60, "1")
+            
+            # Fetch Mapbox alternatives to destination
+            dest_pt = db.query(func.ST_Y(trip.destination_geom), func.ST_X(trip.destination_geom)).first()
+            if dest_pt and dest_pt[0] and dest_pt[1]:
+                dest_lat, dest_lon = dest_pt[0], dest_pt[1]
+                mapbox_data = await _fetch_mapbox_routes(req.current_lat, req.current_lon, dest_lat, dest_lon)
+                routes = mapbox_data.get("routes", [])
+                
+                evaluations = []
+                for idx, route in enumerate(routes):
+                    coords = route.get("geometry", {}).get("coordinates", [])
+                    if not coords: continue
+                    sampled = _sample_waypoints(coords, step=10)
+                    scores = predict_batch(model, [(pt["lat"], pt["lon"]) for pt in sampled], datetime.utcnow())
+                    avg = sum(scores)/len(scores) if scores else 0
+                    lvl, col = score_to_level(avg)
+                    evaluations.append({
+                        "route_id": f"reroute_{idx+1}",
+                        "average_risk_score": avg,
+                        "color_indicator": col,
+                        "status": "Aman dilalui" if col == "GREEN" else "Berhati-hati",
+                        "waypoints": [{"lat": c[1], "lon": c[0]} for c in coords]
+                    })
+                
+                safe_routes = [e for e in evaluations if e["color_indicator"] in ["GREEN", "YELLOW"]]
+                if safe_routes:
+                    safe_routes.sort(key=lambda x: x["average_risk_score"])
+                    best_route = schemas.RouteEvaluation(**safe_routes[0])
+                    return schemas.TripTrackResponse(
+                        is_safe=False,
+                        show_popup_alert=True,
+                        alert_message="Bahaya terdeteksi di depan! Mengalihkan ke rute yang lebih aman.",
+                        new_safe_route=best_route
+                    )
+            
+            return schemas.TripTrackResponse(
+                is_safe=False,
+                show_popup_alert=True,
+                alert_message="Bahaya terdeteksi, namun tidak ada rute alternatif aman. Segera cari Safe Point terdekat!"
+            )
+            
+    return schemas.TripTrackResponse(is_safe=True, show_popup_alert=False)
+
+def end_trip(db: Session, user_id: str, trip_id: str):
+    trip = db.query(Trip).filter(Trip.id == trip_id).first()
+    if not trip:
+        raise exc.trip_not_found()
+    if str(trip.user_id) != user_id:
+        raise exc.access_denied()
+        
+    trip.status = "COMPLETED"
+    trip.ended_at = func.now()
+    db.commit()
+    
+    redis = get_redis_client()
+    redis.delete(f"trip:{trip_id}:last_position")
+    redis.delete(f"last_alert_at:{trip_id}")
+    return {"message": "Trip berhasil diakhiri"}

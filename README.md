@@ -168,18 +168,16 @@ To solve this while preserving route geometry, SafeHer employs a **Relative Geo-
 This effectively "teleports" the entire route to Chicago while preserving its exact shape, scale, and turn-by-turn geometry. The model evaluates the safety of this teleported route against Chicago's spatial crime distribution, serving as a robust Proof-of-Concept for the routing architecture.
 
 ### Risk Threshold Calibration
-The risk thresholds defined in `geo_config.py` are not arbitrarily chosen. They are rigorously calibrated against the true statistical percentiles of the model's predictions over the entire Chicago training dataset:
-- The exact **33rd percentile (P33)** of the model's output distribution is ~`51.49`.
-- The exact **66th percentile (P66)** of the model's output distribution is ~`67.05`.
+The risk thresholds defined in `geo_config.py` (`70` and `82`) were deliberately designed to center around the Random Forest model's baseline prediction for unknown/quiet areas. 
 
-When spatial data is completely missing for a mocked coordinate, the system relies on a `_global_fallback` which assumes zero historical crime. Due to the nature of the trained Random Forest, this fallback produces a baseline risk score of **`70.35`**. 
+When spatial data is completely missing for a mocked coordinate (e.g., zero historical crimes recorded in that cell during training), the model outputs a global fallback prediction of **`70.35`**. 
 
-To prevent routes with unknown historical data from being prematurely flagged as highly dangerous, the thresholds were dynamically calibrated around this fallback baseline:
-- **`LOW (Green)`**: **`<= 70`** (Model explicitly detects safe historical cell data, driving the score down to the P33-P66 range).
+To prevent these unknown or quiet areas from being prematurely flagged as highly dangerous, the thresholds were manually centered around this fallback baseline:
+- **`LOW (Green)`**: **`<= 70`** (Model explicitly detects safe historical cell data).
 - **`MEDIUM (Yellow)`**: **`71 - 82`** (Acts as the neutral bucket, seamlessly capturing the `70.35` global fallback baseline).
 - **`HIGH (Red)`**: **`> 82`** (Model explicitly detects highly dangerous historical cell data, reaching up to the maximum score of ~89).
 
-This ensures a balanced, proportional risk classification where only explicitly dangerous paths are penalized, maximizing the UX of the route recommendation engine.
+This ensures a balanced, proportional risk classification where areas lacking data default to a "Medium/Neutral" classification, preventing panic alerts while still punishing explicitly dangerous paths.
 
 ### Mapbox Integration & Live Testing
 The routing engine utilizes the **Mapbox Directions API** (which natively supports multiple route alternatives via the `alternatives=true` parameter). This ensures we can provide up to 3 distinct routes for any given trip, which are then individually evaluated by our ML model.
