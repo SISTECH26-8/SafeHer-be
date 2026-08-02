@@ -48,3 +48,43 @@ def list_emergency_contacts(db: Session, user_id: str) -> schemas.EmergencyConta
             ) for c in contacts
         ]
     )
+    
+def update_emergency_contact(db: Session, user_id: str, contact_id: str, data: schemas.EmergencyContactCreate) -> schemas.EmergencyContactUpdateResponse:
+    contact = db.query(EmergencyContact).filter(EmergencyContact.id == contact_id,EmergencyContact.user_id == user_id).first()
+
+    if not contact:
+        raise exc.contact_not_found()
+
+    normalized_phone = _normalize_phone_number(data.phone_number)
+    
+    contact.contact_name = data.contact_name
+    contact.phone_number = normalized_phone
+    contact.relation = data.relation
+
+    db.commit()
+    db.refresh(contact)
+
+    return schemas.EmergencyContactUpdateResponse(
+        status="success",
+        message="Kontak darurat berhasil diperbarui.",
+        contact=schemas.EmergencyContactResponse(
+            contact_id=contact.id,
+            contact_name=contact.contact_name,
+            phone_number=contact.phone_number,
+            relation=contact.relation
+        )
+    )
+
+def delete_emergency_contact(db: Session, user_id: str, contact_id: str) -> schemas.EmergencyContactDeleteResponse:
+    contact = db.query(EmergencyContact).filter(EmergencyContact.id == contact_id, EmergencyContact.user_id == user_id).first()
+
+    if not contact:
+        raise exc.contact_not_found()
+
+    db.delete(contact)
+    db.commit()
+
+    return schemas.EmergencyContactDeleteResponse(
+        status="success",
+        message="Kontak darurat berhasil dihapus."
+    )
