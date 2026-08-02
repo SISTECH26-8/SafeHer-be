@@ -5,6 +5,8 @@ from app.core.config import settings
 from app.core.lifespan import lifespan
 from app.middlewares.logging_middleware import LoggingMiddleware
 from app.users.router import router as users_router
+from app.trips.router import router as trips_router
+from app.safe_points.router import router as safe_points_router
 from app.emergency.router import router as emergency_router
 
 # Import all models to ensure SQLAlchemy mappers initialize correctly
@@ -35,10 +37,12 @@ if settings.CORS_ORIGINS:
 
 app.add_middleware(LoggingMiddleware)
 
-@app.get("/", tags=["System"], include_in_schema=False)
+@app.get("/", tags=["System"])
 def root():
-    """Redirect to API documentation."""
-    return RedirectResponse(url="/docs")
+    """Welcome message and documentation link."""
+    return {
+        "message": "Selamat datang di SafeHer API. Silakan kunjungi /docs untuk melihat dokumentasi API."
+    }
 
 @app.get("/health", tags=["System"])
 def health_check():
@@ -50,4 +54,6 @@ def health_check():
 
 # Register Routers
 app.include_router(users_router, prefix=settings.API_V1_PREFIX + "/auth")
+app.include_router(trips_router, prefix=settings.API_V1_PREFIX)
+app.include_router(safe_points_router, prefix=settings.API_V1_PREFIX)
 app.include_router(emergency_router, prefix=settings.API_V1_PREFIX)

@@ -80,7 +80,7 @@ Response 201 Created:
 
 FLOW 2: Safe Route & Reroute Alert
 Mengakomodasi input tujuan, kalkulasi risk score lokasi tujuan, rekomendasi rute dengan indikator warna, klik marker safe point, dan pop-up peringatan ganti rute.
-4. GET /api/v1/ml/destination-risk
+4. GET /api/v1/trips/destination-risk
 Deskripsi: (Langkah: Sistem mengkalkulasikan risk score lokasi tujuan). Mengecek tingkat bahaya di titik tujuan yang diinput user sebelum merencanakan rute.
 Query Params: lat (lokasi tujuan), lon (lokasi tujuan), datetime
 Response 200 OK:
@@ -90,7 +90,7 @@ Response 200 OK:
   "color_indicator": "RED"
 }
 
-5. POST /api/v1/ml/routes/recommend
+5. POST /api/v1/trips/routes/recommend
 Deskripsi: Menerima titik awal dan tujuan. Backend akan memanggil OSRM untuk mendapatkan rute alternatif, mengevaluasi skor keamanan dengan model ML, dan mengembalikan rute beserta indikator warnanya ke FE. 
 Request Body:
 {
