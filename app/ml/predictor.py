@@ -29,8 +29,8 @@ def load_ml_resources():
     """Memuat file statistik parquet & JSON secara global di memori."""
     global _cell_stats, _cell_fallback, _global_fallback
     
-    base_dir = os.path.dirname(__file__)
-    data_dir = os.path.join(base_dir, "data")
+    base_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+    data_dir = os.path.join(base_dir, "artifacts", "ml", "datasets")
     
     f_stats = os.path.join(data_dir, "cell_stats.parquet")
     f_cell_fb = os.path.join(data_dir, "cell_stats_fallback_cell.parquet")

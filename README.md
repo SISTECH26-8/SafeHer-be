@@ -6,7 +6,7 @@ REST API backend for **SafeHer** — a women's safety platform providing ML-base
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.111-009688?style=flat-square&logo=fastapi&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-PostGIS-336791?style=flat-square&logo=postgresql&logoColor=white)
 ![Redis](https://img.shields.io/badge/Redis-Upstash-DC382D?style=flat-square&logo=redis&logoColor=white)
-![LightGBM](https://img.shields.io/badge/ML-LightGBM-brightgreen?style=flat-square)
+![Scikit-Learn](https://img.shields.io/badge/ML-Scikit_Learn-F7931E?style=flat-square&logo=scikit-learn&logoColor=white)
 
 ---
 
@@ -18,7 +18,7 @@ REST API backend for **SafeHer** — a women's safety platform providing ML-base
 | Database | PostgreSQL + PostGIS (Supabase) |
 | ORM & Migrations | SQLAlchemy 2.0 + Alembic |
 | Caching & Live Tracking | Redis (Upstash) |
-| Machine Learning | LightGBM (`.joblib`) |
+| Machine Learning | Scikit-Learn (RandomForest `.joblib`) |
 | Geo Processing | GeoAlchemy2 + OSRM |
 | Auth | JWT (`python-jose`) + bcrypt (`passlib`) |
 | Emergency Notifications | WhatsApp Cloud API |
