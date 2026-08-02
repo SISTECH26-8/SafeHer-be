@@ -16,6 +16,10 @@ class EmergencyContactCreate(BaseModel):
             raise ValueError("Nomor telepon tidak valid")
         return cleaned
 
+class EmergencyContactCreateResponse(BaseModel):
+    contact_id: UUID
+    message: str
+    
 class EmergencyContactResponse(BaseModel):
     contact_id: UUID
     contact_name: str
@@ -24,3 +28,12 @@ class EmergencyContactResponse(BaseModel):
 
 class EmergencyContactListResponse(BaseModel):
     contacts: list[EmergencyContactResponse]
+
+class EmergencyContactUpdateResponse(BaseModel):
+    status: str
+    message: str
+    contact: EmergencyContactResponse
+    
+class EmergencyContactDeleteResponse(BaseModel):
+    status: str
+    message: str
