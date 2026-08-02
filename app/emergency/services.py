@@ -1,13 +1,20 @@
 import re
 from sqlalchemy.orm import Session
 from app.users.models import EmergencyContact
-from app.emergency.schemas import EmergencyContactCreate, EmergencyContactResponse, EmergencyContactListResponse
-from app.core.security import hash_password, verify_password, create_access_token
+from app.emergency import schemas
 from app.core import exceptions as exc
 
 SOS_TRUSTED_CONTACT_LIMIT = 3
 
-def add_emergency_contact(db: Session, user_id: str, data: EmergencyContactCreate) -> dict:
+def _normalize_phone_number(phone: str) -> str:
+    cleaned = re.sub(r'[^\d+]', '', phone)
+    if cleaned.startswith('+62'):
+        cleaned = '0' + cleaned[3:]
+    elif cleaned.startswith('62'):
+        cleaned = '0' + cleaned[2:]
+    return cleaned
+
+def add_emergency_contact(db: Session, user_id: str, data: schemas.EmergencyContactCreate) -> schemas.EmergencyContactCreateResponse:
     current_count = db.query(EmergencyContact).filter(
         EmergencyContact.user_id == user_id
     ).count()
