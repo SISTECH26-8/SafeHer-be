@@ -28,7 +28,7 @@ class Settings(BaseSettings):
     REDIS_SOS_TTL_SECONDS: int = 3600
     
     MODEL_VERSION: str = "v4.0"
-    MODEL_PATH: str = "app/ml/models/model_v4.joblib"
+    MODEL_PATH: str = "artifacts/ml/models/model_v4.joblib"
     
     MAPBOX_BASE_URL: str = "https://api.mapbox.com/directions/v5/mapbox"
     MAPBOX_TIMEOUT_SECONDS: int = 10

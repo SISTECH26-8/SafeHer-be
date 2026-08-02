@@ -114,7 +114,7 @@ def parse_and_seed(db: Session, all_elements: list):
         
     print(f"Tersaring {len(safe_points_data)} Safe Points valid (tanpa duplikat, + filter 24 Jam).")
     
-    data_dir = os.path.join(os.path.dirname(__file__), "data")
+    data_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "artifacts", "seeds")
     os.makedirs(data_dir, exist_ok=True)
     csv_path = os.path.join(data_dir, "safe_points.csv")
     
