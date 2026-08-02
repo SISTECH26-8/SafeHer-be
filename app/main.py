@@ -5,6 +5,7 @@ from app.core.config import settings
 from app.core.lifespan import lifespan
 from app.middlewares.logging_middleware import LoggingMiddleware
 from app.users.router import router as users_router
+from app.emergency.router import router as emergency_router
 
 # Import all models to ensure SQLAlchemy mappers initialize correctly
 import app.users.models
@@ -48,4 +49,5 @@ def health_check():
     }
 
 # Register Routers
-app.include_router(users_router, prefix=settings.API_V1_PREFIX)
+app.include_router(users_router, prefix=settings.API_V1_PREFIX + "/auth")
+app.include_router(emergency_router, prefix=settings.API_V1_PREFIX)
