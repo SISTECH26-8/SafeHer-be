@@ -68,3 +68,4 @@ def login_user(db: Session, data: LoginRequest) -> LoginResponse:
             "phone_number": user.phone_number
         }
     )
+    

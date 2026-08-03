@@ -424,7 +424,7 @@ def mock_route_to_chicago(waypoints: list[tuple[float, float]]) -> list[tuple[fl
 
 ### Business Logic (step-by-step)
 
-**A. `GET /ml/destination-risk`**
+**A. `GET /trips/destination-risk`**
 1. Validasi query params `lat, lon, datetime` (format & range).
 2. Mock koordinat tujuan ke Chicago (single-point, lihat 2.4).
 3. Susun fitur input model (koordinat mock + fitur waktu dari `datetime` asli: jam, hari-dalam-minggu, weekend/weekday).
@@ -436,7 +436,7 @@ def mock_route_to_chicago(waypoints: list[tuple[float, float]]) -> list[tuple[fl
 6. Insert log ke `ml_prediction_logs` (`source="live"`).
 7. Return response.
 
-**B. `POST /ml/routes/recommend`**
+**B. `POST /trips/routes/recommend`**
 1. Validasi `origin_lat/lon`, `destination_lat/lon`, `datetime`.
 2. Panggil **OSRM** (`services/routing_service.py`) untuk mendapatkan **minimal 2 rute alternatif** (gunakan parameter `alternatives=true` pada OSRM). Gunakan `httpx` dengan **timeout** (`OSRM_TIMEOUT_SECONDS`) dan **retry** (`tenacity`, maks 2x, exponential backoff).
 3. Untuk setiap rute: ekstrak waypoints dari geometry OSRM → **sampling** waypoint (jangan evaluasi *setiap* titik geometry mentah OSRM yang bisa ratusan — ambil sampel tiap N meter, misal tiap ±200m, demi performa & biaya inference).
@@ -457,8 +457,8 @@ def mock_route_to_chicago(waypoints: list[tuple[float, float]]) -> list[tuple[fl
 
 | Method | Route | Request | Response |
 |---|---|---|---|
-| GET | `/api/v1/ml/destination-risk` 🔒 | Query: `lat, lon, datetime` | `200 {risk_score, level, color_indicator}` |
-| POST | `/api/v1/ml/routes/recommend` 🔒 | `origin_lat, origin_lon, destination_lat, destination_lon, datetime` | `200 {recommended_route_id, evaluations:[{route_id, average_risk_score, color_indicator, status, waypoints}]}` |
+| GET | `/api/v1/trips/destination-risk` 🔒 | Query: `lat, lon, datetime` | `200 {risk_score, level, color_indicator}` |
+| POST | `/api/v1/trips/routes/recommend` 🔒 | `origin_lat, origin_lon, destination_lat, destination_lon, datetime` | `200 {recommended_route_id, evaluations:[{route_id, average_risk_score, color_indicator, status, waypoints}]}` |
 | GET | `/api/v1/safe-points` 🔒 | Query: `lat, lon, radius_km` | `200 [{safe_id, name, type, lat, lon, status_lokasi, contact_number}]` |
 
 ### Edge Cases

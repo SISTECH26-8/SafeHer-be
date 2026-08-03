@@ -30,5 +30,6 @@ jobs:
         DIRECT_URL: "postgresql://dummy:dummy@localhost:5432/dummy"
         REDIS_URL: "redis://localhost:6379/0"
         WHATSAPP_API_KEY: "dummy_api_key"
+        MAPBOX_API_KEY: "dummy_mapbox_key"
       run: |
         python -c "from app.main import app; print('BUILD OK')"
