@@ -113,7 +113,7 @@ async def send_wa_alerts(user_name: str, contacts: list, tracking_url: str):
     Mengirim pesan darurat ke kontak via Otoway.net API
     """
     url = settings.WHATSAPP_API_URL
-    token = settings.WHATSAPP_API_TOKEN
+    token = settings.WHATSAPP_API_KEY
     
     if not token or token == "your-wa-api-key" or not url:
         for contact in contacts:
@@ -130,17 +130,16 @@ async def send_wa_alerts(user_name: str, contacts: list, tracking_url: str):
             )
             
             payload = {
-                "phone": contact.phone_number,
+                "target": contact.phone_number,
                 "message": message_text
             }
             
             headers = {
-                "Authorization": f"Bearer {token}", 
-                "Content-Type": "application/json"
+                "Authorization": token
             }
             
             try:
-                response = await client.post(url, json=payload, headers=headers, timeout=10.0)
+                response = await client.post(url, data=payload, headers=headers, timeout=10.0)
                 response.raise_for_status()
                 logger.info(f"Berhasil kirim WA SOS ke {contact.phone_number}")
             except Exception as e:
