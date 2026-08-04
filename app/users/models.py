@@ -38,9 +38,9 @@ class UserPreference(Base):
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), unique=True, nullable=False)
-    priority_main_road = Column(Boolean, default=False)
-    auto_share_sos_to_contacts = Column(Boolean, default=False)
-    alert_radius_km = Column(Float, default=2.5)
+    priority_main_road = Column(Boolean, default=False, nullable=False, server_default='false')
+    auto_share_sos_to_contacts = Column(Boolean, default=False, nullable=False, server_default='false')
+    alert_radius_km = Column(Float, default=2.5, nullable=False, server_default='2.5')
     
     # Relationships
     user = relationship("User", back_populates="preferences")

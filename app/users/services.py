@@ -82,47 +82,6 @@ def get_user_profile(db: Session, user_id: str):
         phone_number=user.phone_number,
         created_at=user.created_at
     )
-
-def update_user_profile(db: Session, user_id: str, data: schemas.UserProfileUpdate):
-    user = db.query(User).filter(User.id == user_id).first()
-    if not user:
-        raise exc.user_not_found()
-    
-    user.full_name = data.full_name
-    user.phone_number = _normalize_phone_number(data.phone_number)
-    db.commit()
-    db.refresh(user)
-    
-    return schemas.UserProfileUpdateResponse(
-        status="success",
-        message="Profil berhasil diperbarui",
-        user=get_user_profile(db, user_id)
-    )
-
-def get_user_preferences(db: Session, user_id: str):
-    from app.users.models import UserPreference
-    from app.users.schemas import UserPreferenceSchema
-    pref = db.query(UserPreference).filter(UserPreference.user_id == user_id).first()
-    if not pref:
-        # Create default preference if it doesn't exist
-        pref = UserPreference(user_id=user_id)
-        db.add(pref)
-        db.commit()
-        db.refresh(pref)
-        
-    return UserPreferenceSchema(
-        priority_main_road=pref.priority_main_road,
-        auto_share_sos_to_contacts=pref.auto_share_sos_to_contacts,
-        alert_radius_km=pref.alert_radius_km
-    )
-
-def update_user_preferences(db: Session, user_id: str, data: schemas.UserPreferenceSchema):
-    from app.users.models import UserPreference
-    pref = db.query(UserPreference).filter(UserPreference.user_id == user_id).first()
-    if not pref:
-        pref = UserPreference(user_id=user_id)
-        db.add(pref)
-        
 import re
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
@@ -227,13 +186,22 @@ def update_user_profile(db: Session, user_id: str, data: schemas.UserProfileUpda
 def get_user_preferences(db: Session, user_id: str):
     from app.users.models import UserPreference
     from app.users.schemas import UserPreferenceSchema
+    
+    # Validate user
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise exc.user_not_found()
+
     pref = db.query(UserPreference).filter(UserPreference.user_id == user_id).first()
     if not pref:
-        # Create default preference if it doesn't exist
-        pref = UserPreference(user_id=user_id)
-        db.add(pref)
-        db.commit()
-        db.refresh(pref)
+        try:
+            pref = UserPreference(user_id=user_id)
+            db.add(pref)
+            db.commit()
+            db.refresh(pref)
+        except IntegrityError:
+            db.rollback()
+            pref = db.query(UserPreference).filter(UserPreference.user_id == user_id).first()
         
     return UserPreferenceSchema(
         priority_main_road=pref.priority_main_road,
@@ -243,10 +211,22 @@ def get_user_preferences(db: Session, user_id: str):
 
 def update_user_preferences(db: Session, user_id: str, data: schemas.UserPreferenceSchema):
     from app.users.models import UserPreference
+    
+    # Validate user
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise exc.user_not_found()
+
     pref = db.query(UserPreference).filter(UserPreference.user_id == user_id).first()
     if not pref:
-        pref = UserPreference(user_id=user_id)
-        db.add(pref)
+        try:
+            pref = UserPreference(user_id=user_id)
+            db.add(pref)
+            db.commit()
+            db.refresh(pref)
+        except IntegrityError:
+            db.rollback()
+            pref = db.query(UserPreference).filter(UserPreference.user_id == user_id).first()
         
     pref.priority_main_road = data.priority_main_road
     pref.auto_share_sos_to_contacts = data.auto_share_sos_to_contacts
@@ -257,46 +237,4 @@ def update_user_preferences(db: Session, user_id: str, data: schemas.UserPrefere
     return schemas.UserPreferenceUpdateResponse(
         status="success",
         message="Preferensi keamanan berhasil disimpan"
-    )
-
-def update_emergency_contact(db: Session, user_id: str, contact_id: str, data):
-    from app.users.models import EmergencyContact
-    from app.emergency.schemas import EmergencyContactUpdateResponse, EmergencyContactResponse
-    
-    contact = db.query(EmergencyContact).filter(EmergencyContact.id == contact_id, EmergencyContact.user_id == user_id).first()
-    if not contact:
-        raise exc.contact_not_found()
-        
-    contact.contact_name = data.contact_name
-    contact.phone_number = _normalize_phone_number(data.phone_number)
-    contact.relation = data.relation
-    
-    db.commit()
-    db.refresh(contact)
-    
-    return EmergencyContactUpdateResponse(
-        status="success",
-        message="Kontak darurat berhasil diperbarui",
-        contact=EmergencyContactResponse(
-            contact_id=contact.id,
-            contact_name=contact.contact_name,
-            phone_number=contact.phone_number,
-            relation=contact.relation
-        )
-    )
-
-def delete_emergency_contact(db: Session, user_id: str, contact_id: str):
-    from app.users.models import EmergencyContact
-    from app.emergency.schemas import EmergencyContactDeleteResponse
-    
-    contact = db.query(EmergencyContact).filter(EmergencyContact.id == contact_id, EmergencyContact.user_id == user_id).first()
-    if not contact:
-        raise exc.contact_not_found()
-        
-    db.delete(contact)
-    db.commit()
-    
-    return EmergencyContactDeleteResponse(
-        status="success",
-        message="Kontak darurat berhasil dihapus"
     )

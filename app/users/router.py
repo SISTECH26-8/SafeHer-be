@@ -36,13 +36,4 @@ def get_preferences(db: Session = Depends(get_db), user_id: str = Depends(get_cu
 def update_preferences(data: schemas.UserPreferenceSchema, db: Session = Depends(get_db), user_id: str = Depends(get_current_user_id)):
     return services.update_user_preferences(db, user_id, data)
 
-from app.emergency.schemas import EmergencyContactCreate, EmergencyContactUpdateResponse, EmergencyContactDeleteResponse
-
-@users_router.put("/emergency-contacts/{contact_id}", status_code=status.HTTP_200_OK, response_model=EmergencyContactUpdateResponse)
-def update_emergency_contact(contact_id: str, data: EmergencyContactCreate, db: Session = Depends(get_db), user_id: str = Depends(get_current_user_id)):
-    return services.update_emergency_contact(db, user_id, contact_id, data)
-
-@users_router.delete("/emergency-contacts/{contact_id}", status_code=status.HTTP_200_OK, response_model=EmergencyContactDeleteResponse)
-def delete_emergency_contact(contact_id: str, db: Session = Depends(get_db), user_id: str = Depends(get_current_user_id)):
-    return services.delete_emergency_contact(db, user_id, contact_id)
 

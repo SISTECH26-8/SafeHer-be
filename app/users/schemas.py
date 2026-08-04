@@ -12,9 +12,8 @@ class RegisterRequest(BaseModel):
     @classmethod
     def validate_phone(cls, v: str) -> str:
         import re
-        cleaned = re.sub(r'[^\d+]', '', v)
-        if not cleaned or (cleaned == '+'):
-            raise ValueError("Nomor telepon tidak valid")
+        if not re.match(r'^(0|62)\d+$', v):
+            raise ValueError("Nomor telepon tidak valid. Harus diawali 0 atau 62 dan hanya berisi angka.")
         return v
 
     @field_validator('password')
@@ -53,9 +52,8 @@ class UserProfileUpdate(BaseModel):
     @classmethod
     def validate_phone(cls, v: str) -> str:
         import re
-        cleaned = re.sub(r'[^\d+]', '', v)
-        if not cleaned or (cleaned == '+'):
-            raise ValueError("Nomor telepon tidak valid")
+        if not re.match(r'^(0|62)\d+$', v):
+            raise ValueError("Nomor telepon tidak valid. Harus diawali 0 atau 62 dan hanya berisi angka.")
         return v
 
 class UserProfileUpdateResponse(BaseModel):
@@ -63,10 +61,12 @@ class UserProfileUpdateResponse(BaseModel):
     message: str
     user: UserProfileResponse
 
+from pydantic import BaseModel, EmailStr, field_validator, Field
+
 class UserPreferenceSchema(BaseModel):
     priority_main_road: bool
     auto_share_sos_to_contacts: bool
-    alert_radius_km: float
+    alert_radius_km: float = Field(ge=0.0)
 
 class UserPreferenceUpdateResponse(BaseModel):
     status: str

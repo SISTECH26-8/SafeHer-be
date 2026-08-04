@@ -59,6 +59,12 @@ def access_denied():
         detail={"status": "error", "code": "ACCESS_DENIED", "message": "Anda tidak memiliki izin untuk mengakses sumber daya ini."},
     )
 
+def user_not_found():
+    raise HTTPException(
+        status_code=status.HTTP_404_NOT_FOUND,
+        detail={"status": "error", "code": "USER_NOT_FOUND", "message": "Pengguna tidak ditemukan."},
+    )
+
 
 def trip_not_found():
     raise HTTPException(

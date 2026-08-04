@@ -23,9 +23,9 @@ def upgrade() -> None:
     op.create_table('user_preferences',
     sa.Column('id', sa.UUID(), nullable=False),
     sa.Column('user_id', sa.UUID(), nullable=False),
-    sa.Column('priority_main_road', sa.Boolean(), nullable=True),
-    sa.Column('auto_share_sos_to_contacts', sa.Boolean(), nullable=True),
-    sa.Column('alert_radius_km', sa.Float(), nullable=True),
+    sa.Column('priority_main_road', sa.Boolean(), nullable=False, server_default=sa.text('false')),
+    sa.Column('auto_share_sos_to_contacts', sa.Boolean(), nullable=False, server_default=sa.text('false')),
+    sa.Column('alert_radius_km', sa.Float(), nullable=False, server_default=sa.text('2.5')),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('user_id')
