@@ -1,5 +1,8 @@
 import re
 import json
+import httpx
+import logging
+import asyncio
 from datetime import datetime, timezone
 from sqlalchemy.orm import Session
 from sqlalchemy import func
@@ -9,6 +12,9 @@ from app.emergency.models import SOSSession
 from app.emergency import schemas
 from app.core import exceptions as exc
 from app.db.redis_client import redis_client
+from app.core.config import settings
+
+logger = logging.getLogger(__name__)
 
 SOS_TRUSTED_CONTACT_LIMIT = 3
 
@@ -102,16 +108,43 @@ def delete_emergency_contact(db: Session, user_id: str, contact_id: str) -> sche
         message="Kontak darurat berhasil dihapus."
     )
     
-def send_wa_alerts(user_name: str, contacts: list, tracking_url: str):
+async def send_wa_alerts(user_name: str, contacts: list, tracking_url: str):
     """
-    Mock service untuk BackgroundTasks pengiriman notifikasi WhatsApp ke kontak darurat.
+    Mengirim pesan darurat ke kontak via Otoway.net API
     """
-    try:
+    url = settings.WHATSAPP_API_URL
+    token = settings.WHATSAPP_API_TOKEN
+    
+    if not token or token == "your-wa-api-key" or not url:
         for contact in contacts:
-            print(f"[WA MOCK] Mengirim pesan darurat ke {contact.contact_name} ({contact.phone_number}):")
-            print(f"[WA MOCK] {user_name} dalam bahaya! Lacak lokasinya di: {tracking_url}")
-    except Exception as e:
-        print(f"[WA MOCK ERROR] Gagal mengirim alert: {e}")
+            logger.info(f"[MOCK WA] Mengirim ke {contact.contact_name} ({contact.phone_number})")
+        return
+
+    async with httpx.AsyncClient() as client:
+        for contact in contacts:
+            message_text = (
+                f"*DARURAT!* ⚠️\n\n"
+                f"*{user_name}* sedang dalam bahaya!\n\n"
+                f"Lacak lokasi terkini secara live di sini:\n"
+                f"{tracking_url}"
+            )
+            
+            payload = {
+                "phone": contact.phone_number,
+                "message": message_text
+            }
+            
+            headers = {
+                "Authorization": f"Bearer {token}", 
+                "Content-Type": "application/json"
+            }
+            
+            try:
+                response = await client.post(url, json=payload, headers=headers, timeout=10.0)
+                response.raise_for_status()
+                logger.info(f"Berhasil kirim WA SOS ke {contact.phone_number}")
+            except Exception as e:
+                logger.error(f"Gagal kirim WA SOS ke {contact.phone_number}: {e}")
 
 def create_sos_session(db: Session, user_id: str, data: schemas.SOSCreateRequest, background_tasks: BackgroundTasks) -> schemas.SOSCreateResponse:
     existing_session = db.query(SOSSession).filter(
