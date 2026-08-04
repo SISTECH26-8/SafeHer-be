@@ -6,6 +6,7 @@ import os
 class Settings(BaseSettings):
     PROJECT_NAME: str = "SafeHer API"
     ENVIRONMENT: str = "development"
+    FRONTEND_URL: str = "http://localhost:3000"
     API_V1_PREFIX: str = "/api/v1"
     CORS_ORIGINS: str | List[str] = ["*"]
     

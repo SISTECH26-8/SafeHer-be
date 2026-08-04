@@ -174,7 +174,7 @@ def create_sos_session(db: Session, user_id: str, data: schemas.SOSCreateRequest
     user = db.query(User).filter(User.id == user_id).first()
     contacts = db.query(EmergencyContact).filter(EmergencyContact.user_id == user_id).all()
     
-    live_tracking_url = f"https://safeher.app/track/{sos_id}"
+    live_tracking_url = f"{settings.FRONTEND_URL}/track/{sos_id}"
 
     if contacts:
         background_tasks.add_task(send_wa_alerts, user.full_name, contacts, live_tracking_url)
