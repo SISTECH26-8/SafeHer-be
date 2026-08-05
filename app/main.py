@@ -54,6 +54,7 @@ def health_check():
     from sqlalchemy import text
     
     db_status = "error"
+    db = None
     try:
         db = SessionLocal()
         db.execute(text("SELECT 1"))
@@ -61,7 +62,8 @@ def health_check():
     except Exception:
         pass
     finally:
-        db.close()
+        if db is not None:
+            db.close()
         
     redis_status = "error"
     try:
