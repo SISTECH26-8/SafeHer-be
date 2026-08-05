@@ -21,6 +21,9 @@ class APIRequestLog(Base):
     timestamp = Column(DateTime(timezone=True), server_default=func.now())
     method = Column(String, nullable=False)
     path = Column(String, nullable=False)
+    query_params = Column(JSONB, nullable=True)
+    request_body = Column(JSONB, nullable=True)
     status_code = Column(Integer, nullable=False)
     latency_ms = Column(Float, nullable=False)
+    message = Column(String, nullable=True)
     user_id = Column(UUID(as_uuid=True), nullable=True) # Nullable for unauthenticated endpoints
