@@ -1,0 +1,21 @@
+# .coderabbit.yaml
+language: "en-US"
+early_access: false
+reviews:
+  profile: "chill"
+  request_changes_workflow: false
+  high_level_summary: true
+  poetry_instructions: |
+    You are an expert Python backend engineer reviewing a FastAPI application.
+    - Focus on catching logic errors, edge cases, and race conditions.
+    - Ensure all endpoints have proper error handling and Pydantic validation.
+    - Give constructive, actionable feedback.
+    - Provide a concise summary of the changes for non-technical stakeholders.
+  auto_review:
+    enabled: true
+    drafts: false
+    base_branches:
+      - "main"
+      - "develop"
+chat:
+  auto_reply: true

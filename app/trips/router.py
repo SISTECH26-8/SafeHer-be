@@ -62,6 +62,7 @@ def start_trip(
 async def track_trip(
     trip_id: str,
     req: schemas.TripTrackRequest,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     user_id: str = Depends(get_current_user_id),
     model: Any = Depends(get_model)
@@ -69,7 +70,7 @@ async def track_trip(
     """
     Melacak posisi pengguna secara real-time dan mengevaluasi risiko ulang.
     """
-    return await services.track_trip(db=db, user_id=user_id, trip_id=trip_id, req=req, model=model)
+    return await services.track_trip(db=db, background_tasks=background_tasks, user_id=user_id, trip_id=trip_id, req=req, model=model)
 
 @router.post("/{trip_id}/end")
 def end_trip(

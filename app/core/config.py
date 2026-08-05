@@ -6,6 +6,7 @@ import os
 class Settings(BaseSettings):
     PROJECT_NAME: str = "SafeHer API"
     ENVIRONMENT: str = "development"
+    FRONTEND_URL: str = "http://localhost:3000"
     API_V1_PREFIX: str = "/api/v1"
     CORS_ORIGINS: str | List[str] = ["*"]
     
@@ -35,7 +36,7 @@ class Settings(BaseSettings):
     MAPBOX_TIMEOUT_SECONDS: int = 10
     MAPBOX_API_KEY: str
     WHATSAPP_API_KEY: str = "your-wa-api-key"
-    WHATSAPP_API_BASE_URL: str = "https://graph.facebook.com/v19.0"
+    WHATSAPP_API_URL: str = "https://www.otoway.net/api/send.php"
     
     SAFE_POINT_DEFAULT_RADIUS_KM: float = 2.0
     SOS_TRUSTED_CONTACT_LIMIT: int = 3
