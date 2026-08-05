@@ -19,19 +19,32 @@ from datetime import datetime
 import math
 from fastapi import BackgroundTasks
 
-def _create_ml_log(db: Session, source: str, inputs: dict, predicted_score: float):
-    log = MLPredictionLog(
-        request_id=uuid.uuid4(),
-        model_version=settings.MODEL_VERSION,
-        source=source,
-        inputs=inputs,
-        predicted_score=predicted_score
-    )
-    db.add(log)
-    db.commit()
+def _create_ml_log(source: str, inputs: dict, predicted_score: float, latency_ms: float = 0.0):
+    from app.db.session import SessionLocal
+    db = SessionLocal()
+    try:
+        log = MLPredictionLog(
+            request_id=uuid.uuid4(),
+            model_version=settings.MODEL_VERSION,
+            source=source,
+            inputs=inputs,
+            predicted_score=predicted_score,
+            latency_ms=latency_ms
+        )
+        db.add(log)
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        print(f"Error creating ML log: {e}")
+    finally:
+        db.close()
 
 def get_destination_risk(db: Session, background_tasks: BackgroundTasks, model: Any, req: schemas.DestinationRiskRequest) -> schemas.DestinationRiskResponse:
+    import time
+    t0 = time.monotonic()
     score = predict_risk_score(model, req.lat, req.lon, req.datetime)
+    latency_ms = (time.monotonic() - t0) * 1000
+    
     level, color = score_to_level(score)
     
     mocked = mock_route_to_chicago([(req.lat, req.lon)])
@@ -39,7 +52,6 @@ def get_destination_risk(db: Session, background_tasks: BackgroundTasks, model: 
     
     background_tasks.add_task(
         _create_ml_log,
-        db=db,
         source="live_destination",
         inputs={
             "original_lat": req.lat,
@@ -48,7 +60,8 @@ def get_destination_risk(db: Session, background_tasks: BackgroundTasks, model: 
             "mock_lon": mock_lon,
             "datetime": req.datetime.isoformat()
         },
-        predicted_score=score
+        predicted_score=score,
+        latency_ms=latency_ms
     )
     
     return schemas.DestinationRiskResponse(
@@ -118,8 +131,11 @@ async def recommend_safe_routes(db: Session, background_tasks: BackgroundTasks, 
         sampled = _sample_waypoints(coords, step=10) # Adjust step as needed
         waypoints_tuples = [(pt["lat"], pt["lon"]) for pt in sampled]
         
+        import time
+        t0 = time.monotonic()
         # Batch Predict
         scores = predict_batch(model, waypoints_tuples, req.datetime)
+        latency_ms = (time.monotonic() - t0) * 1000
         
         avg_score = sum(scores) / len(scores) if scores else 0
         level, color = score_to_level(avg_score)
@@ -131,7 +147,6 @@ async def recommend_safe_routes(db: Session, background_tasks: BackgroundTasks, 
         mocked_coords = mock_route_to_chicago(waypoints_tuples)
         background_tasks.add_task(
             _create_ml_log,
-            db=db,
             source="route_recommend",
             inputs={
                 "route_id": route_id,
@@ -139,7 +154,8 @@ async def recommend_safe_routes(db: Session, background_tasks: BackgroundTasks, 
                 "mock_waypoints": mocked_coords,
                 "datetime": req.datetime.isoformat()
             },
-            predicted_score=avg_score
+            predicted_score=avg_score,
+            latency_ms=latency_ms
         )
         
         # We must return FULL waypoints to frontend (not sampled), as per API contract?
@@ -200,7 +216,7 @@ def start_trip(db: Session, user_id: str, req: schemas.TripStartRequest) -> sche
     db.refresh(trip)
     return schemas.TripStartResponse(trip_id=str(trip.id), status=trip.status)
 
-async def track_trip(db: Session, user_id: str, trip_id: str, req: schemas.TripTrackRequest, model: Any) -> schemas.TripTrackResponse:
+async def track_trip(db: Session, background_tasks: BackgroundTasks, user_id: str, trip_id: str, req: schemas.TripTrackRequest, model: Any) -> schemas.TripTrackResponse:
     trip = db.query(Trip).filter(Trip.id == trip_id).first()
     if not trip:
         raise exc.trip_not_found()
@@ -257,9 +273,24 @@ async def track_trip(db: Session, user_id: str, trip_id: str, req: schemas.TripT
                     coords = route.get("geometry", {}).get("coordinates", [])
                     if not coords: continue
                     sampled = _sample_waypoints(coords, step=10)
+                    import time
+                    t0 = time.monotonic()
                     scores = predict_batch(model, [(pt["lat"], pt["lon"]) for pt in sampled], datetime.utcnow())
+                    latency_ms = (time.monotonic() - t0) * 1000
                     avg = sum(scores)/len(scores) if scores else 0
                     lvl, col = score_to_level(avg)
+                    
+                    background_tasks.add_task(
+                        _create_ml_log,
+                        source="trip_track_reroute",
+                        inputs={
+                            "trip_id": trip_id,
+                            "route_id": f"reroute_{idx+1}",
+                        },
+                        predicted_score=avg,
+                        latency_ms=latency_ms
+                    )
+                    
                     evaluations.append({
                         "route_id": f"reroute_{idx+1}",
                         "average_risk_score": avg,
