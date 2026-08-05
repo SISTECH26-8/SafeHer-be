@@ -9,6 +9,7 @@ from app.trips.router import router as trips_router
 from app.safe_points.router import router as safe_points_router
 from app.emergency.router import router as emergency_router
 from app.reports.router import router as reports_router
+from app.system.router import router as system_router
 
 # Import all models to ensure SQLAlchemy mappers initialize correctly
 import app.users.models
@@ -48,9 +49,33 @@ def root():
 @app.get("/health", tags=["System"])
 def health_check():
     """Health check endpoint."""
+    from app.db.redis_client import get_redis_client
+    from app.db.session import SessionLocal
+    from sqlalchemy import text
+    
+    db_status = "error"
+    try:
+        db = SessionLocal()
+        db.execute(text("SELECT 1"))
+        db_status = "connected"
+    except Exception:
+        pass
+    finally:
+        db.close()
+        
+    redis_status = "error"
+    try:
+        redis_client = get_redis_client()
+        redis_client.ping()
+        redis_status = "connected"
+    except Exception:
+        pass
+        
     return {
-        "status": "ok",
-        "model_loaded": app.state.model is not None
+        "status": "ok" if db_status == "connected" and redis_status == "connected" else "degraded",
+        "model_loaded": app.state.model is not None,
+        "db": db_status,
+        "redis": redis_status
     }
 
 # Register Routers
@@ -60,3 +85,4 @@ app.include_router(trips_router, prefix=settings.API_V1_PREFIX)
 app.include_router(safe_points_router, prefix=settings.API_V1_PREFIX)
 app.include_router(emergency_router, prefix=settings.API_V1_PREFIX)
 app.include_router(reports_router, prefix=settings.API_V1_PREFIX)
+app.include_router(system_router)
