@@ -44,6 +44,8 @@ SafeHer-be/
 │   ├── middlewares/     # Global middleware (e.g., API Request Logging)
 │   ├── users/           # Endpoints: Register, Login, Profile, Preferences
 │   ├── trips/           # Endpoints: Route Recommendations, Start Trip
+│   ├── reports/         # Endpoints: Anonymous Incident Reporting
+│   ├── safe_points/     # Endpoints: Safe Points
 │   ├── emergency/       # Endpoints: Emergency Contacts, Trigger SOS
 │   ├── system/          # Endpoints: Monitoring Dashboard & Export Logs
 │   └── main.py          # FastAPI Entry point
@@ -76,11 +78,12 @@ pip install -r requirements.txt
 ### 3. Configure Environment Variables (`.env`)
 Copy the template file and fill in the values (especially DB credentials, Redis, and Mapbox API keys).
 ```bash
-copy .env.example .env
+copy .env.example .env   # Windows
+cp .env.example .env     # Mac/Linux
 ```
 
 ### 4. Run Database Migrations
-Ensure the database URL in `.env` is valid. This command will create the tables in Supabase.
+Ensure both `DATABASE_URL` and `DIRECT_URL` in `.env` are set correctly (Alembic requires `DIRECT_URL` for migrations when using a Supabase connection pooler). This command will create the tables in Supabase.
 ```bash
 alembic upgrade head
 ```
@@ -105,12 +108,12 @@ To test the SafeHer system flow sequentially in Swagger UI (`/docs`) or Postman,
 2. **`PUT /api/v1/users/preferences`**: (Optional) Configure user preferences (e.g., prioritize main roads).
 
 ### **Phase 3: Route Recommendation (Core ML)**
-1. **`POST /api/v1/trips/routes/recommend`**: Submit origin (`origin_lat`, `origin_lon`) and destination (`destination_lat`, `destination_lon`) coordinates. 
+1. **`POST /api/v1/trips/routes/recommend`**: Submit the origin (`origin_lat`, `origin_lon`), destination (`destination_lat`, `destination_lon`), and `datetime`. 
    - *The backend calls the Mapbox API to find alternative routes, extracts the waypoints, and evaluates the risk of each route using the Machine Learning model.*
    - Note the recommended `route_id` in the response.
 
 ### **Phase 4: Navigation & SOS Trigger**
-1. **`POST /api/v1/trips/start`**: Submit the selected `route_id` to start the trip. You will receive a `trip_id`.
+1. **`POST /api/v1/trips/start`**: Submit the selected `route_id` along with your start (`start_lat`, `start_lon`) and destination (`destination_lat`, `destination_lon`) coordinates to start the trip. You will receive a `trip_id`.
 2. **`POST /api/v1/emergency/sos`**: (Danger Simulation). Hit this endpoint using the `trip_id` and the current coordinates.
    - *The backend creates an SOS session in Redis.*
    - *The backend triggers the Otoway WhatsApp Gateway to send a WhatsApp message containing the Live Tracking link (based on `FRONTEND_URL`) to the emergency contacts registered in Phase 2.*
@@ -141,7 +144,7 @@ This occurs because the selected *Anchor* point (the teleportation center) is lo
 Because the risk scores are inherently concentrated at higher values due to the Chicago downtown effect, the thresholds in `geo_config.py` were recalibrated:
 
 - **LOW (Green) - Score `<= 70`**: Route is very safe.
-- **MEDIUM (Yellow) - Score `71 - 82`**: Route is neutral/cautionary. (The average route will fall into this category due to the Chicago downtown effect).
+- **MEDIUM (Yellow) - Score `> 70 and <= 82`**: Route is neutral/cautionary. (The average route will fall into this category due to the Chicago downtown effect).
 - **HIGH (Red) - Score `> 82`**: Route is highly dangerous. The model detected extreme crime areas.
 
 This calibration ensures that not all streets are immediately flagged as red (panic-inducing) just because they are teleported to the city center, while still providing accurate warnings when the user passes through genuinely high-crime streets.
