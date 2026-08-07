@@ -27,7 +27,7 @@ def test_logging_middleware():
     
     if final_count > initial_count:
         print("✅ SUCCESS: Logging middleware correctly saved a request to the database!")
-        log = db.query(APIRequestLog).order_by(APIRequestLog.created_at.desc()).first()
+        log = db.query(APIRequestLog).order_by(APIRequestLog.timestamp.desc()).first()
         print(f"Latest Log -> Path: {log.path}, Method: {log.method}, Status: {log.status_code}, Latency: {log.latency_ms}ms")
     else:
         print("❌ FAILED: No log was saved to the database.")
