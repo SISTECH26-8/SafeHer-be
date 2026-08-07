@@ -132,9 +132,7 @@ def _build_features(lat: float, lon: float, dt: datetime) -> Tuple[pd.DataFrame,
         col_name = f"loc_cat_{lc}"
         features[col_name] = 1.0 if dom_cat == lc else 0.0
         
-    # Pastikan urutan array 23 fitur sesuai FEATURE_COLS
-    df = pd.DataFrame([features], columns=FEATURE_COLS)
-    return df
+    return features
 
 def score_to_level(score: float) -> Tuple[str, str]:
     if score <= geo_config.RISK_THRESHOLD_LOW_MAX:
@@ -155,7 +153,8 @@ def predict_risk_score(model: Any, lat: float, lon: float, dt: datetime) -> Tupl
         
     mock_lat, mock_lon = mocked_coords[0]
     
-    df = _build_features(mock_lat, mock_lon, dt)
+    feat_dict = _build_features(mock_lat, mock_lon, dt)
+    df = pd.DataFrame([feat_dict], columns=FEATURE_COLS)
     
     try:
         prediction = model.predict(df)[0]
@@ -173,13 +172,13 @@ def predict_batch(model: Any, waypoints: List[Tuple[float, float]], dt: datetime
         
     mocked_coords = mock_route_to_chicago(waypoints)
     
-    dfs = []
+    features_list = []
     
     for mock_lat, mock_lon in mocked_coords:
-        df_single = _build_features(mock_lat, mock_lon, dt)
-        dfs.append(df_single)
+        feat_dict = _build_features(mock_lat, mock_lon, dt)
+        features_list.append(feat_dict)
         
-    df_batch = pd.concat(dfs, ignore_index=True)
+    df_batch = pd.DataFrame(features_list, columns=FEATURE_COLS)
     
     try:
         predictions = model.predict(df_batch)
