@@ -24,7 +24,7 @@ REST API backend for **SafeHer** — a women's safety platform providing ML-base
 
 **2. External API**
 * **Routing & Maps:** Mapbox API (Directions API)
-* **WhatsApp SOS Notifications:** Otoway API (WhatsApp Gateway)
+* **WhatsApp SOS Notifications:** Fonnte API (WhatsApp Gateway)
 
 **3. Other Application Components**
 * **Backend Framework:** FastAPI (Python) & Uvicorn
@@ -116,7 +116,7 @@ To test the SafeHer system flow sequentially in Swagger UI (`/docs`) or Postman,
 1. **`POST /api/v1/trips/start`**: Submit the selected `route_id` along with your start (`start_lat`, `start_lon`) and destination (`destination_lat`, `destination_lon`) coordinates to start the trip. You will receive a `trip_id`.
 2. **`POST /api/v1/emergency/sos`**: (Danger Simulation). Hit this endpoint using the `trip_id` and the current coordinates.
    - *The backend creates an SOS session in Redis.*
-   - *The backend triggers the Otoway WhatsApp Gateway to send a WhatsApp message containing the Live Tracking link (based on `FRONTEND_URL`) to the emergency contacts registered in Phase 2.*
+   - *The backend triggers the Fonnte WhatsApp Gateway to send a WhatsApp message containing the Live Tracking link (based on `FRONTEND_URL`) to the emergency contacts registered in Phase 2.*
 3. **`POST /api/v1/emergency/sos/{sos_id}/end`**: (Safety Simulation). End the active SOS emergency session.
 
 ### **Phase 5: Extra Features (Safe Points & Reroute)**
